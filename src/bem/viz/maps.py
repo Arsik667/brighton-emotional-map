@@ -92,13 +92,18 @@ def districts_geojson(district_stats: pd.DataFrame | None = None) -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
-def sentiment_colormap(vmin: float = -0.5, vmax: float = 0.5) -> LinearColormap:
-    """Цветовая шкала для настроения с нейтральным цветом на нуле."""
-    colormap = LinearColormap(
+def sentiment_colormap(vmin: float = -0.5, vmax: float = 0.5,
+                       lang: str = "en") -> LinearColormap:
+    """
+    Цветовая шкала для настроения с нейтральным цветом на нуле.
+
+    Подпись берётся из labels.py, а не зашита здесь: она видна на карте,
+    а карта уезжает и в английский README, и в дашборд.
+    """
+    return LinearColormap(
         colors=SENTIMENT_COLORS, vmin=vmin, vmax=vmax,
-        caption="Net sentiment: доля позитива − доля негатива",
+        caption=get_labels(lang)["net_sentiment"],
     )
-    return colormap
 
 
 def build_map(
@@ -144,7 +149,7 @@ def build_map(
     if scale_mode == "relative" and len(values) and values.max() > values.min():
         # Растягиваем шкалу на фактический диапазон. Подпись обязана
         # сообщить, что сравнение относительное - иначе картинка врёт.
-        colormap = sentiment_colormap(float(values.min()), float(values.max()))
+        colormap = sentiment_colormap(float(values.min()), float(values.max()), lang)
         colormap.caption = L["scale_relative"].format(
             lo=values.min(), hi=values.max()
         )
@@ -152,7 +157,7 @@ def build_map(
         # Симметричная шкала вокруг нуля: нейтральный цвет ровно на нуле,
         # иначе слабый позитив можно принять за негатив.
         limit = max(abs(values.min()), abs(values.max()), 0.1) if len(values) else 0.5
-        colormap = sentiment_colormap(-limit, limit)
+        colormap = sentiment_colormap(-limit, limit, lang)
 
     # ---------- слой 1: районы ----------
     geojson = districts_geojson(district_stats)
