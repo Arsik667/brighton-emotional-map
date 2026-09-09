@@ -42,6 +42,10 @@ from bem.viz.maps import add_title, build_map
 
 st.set_page_config(page_title="Emotional Map of Brighton", page_icon="🌊", layout="wide")
 
+# Язык дашборда. Интерфейс написан по-русски; здесь он задаётся один раз,
+# чтобы карта внутри дашборда не разъезжалась с остальными подписями.
+DASHBOARD_LANG = "ru"
+
 MONTHS_RU = ["янв", "фев", "мар", "апр", "май", "июн",
              "июл", "авг", "сен", "окт", "ноя", "дек"]
 
@@ -89,16 +93,6 @@ places = load_places()
 
 st.title("🌊 Emotional Map of Brighton")
 
-if (texts["source"] == "demo").all():
-    st.warning(
-        "**Работа на демо-данных.** Тексты сгенерированы синтетически "
-        "(`src/bem/collect/demo_corpus.py`) для отладки пайплайна. "
-        "Выводы о настоящем Брайтоне по ним делать нельзя. "
-        "Чтобы подключить реальные данные, добавь ключи Reddit в `.env` "
-        "и запусти `scripts/02_collect_texts.py --source reddit`.",
-        icon="⚠️",
-    )
-
 # ---------- фильтры ----------
 with st.sidebar:
     st.header("Фильтры")
@@ -124,8 +118,23 @@ with st.sidebar:
     chosen_topics = st.multiselect("Темы", all_topics, default=all_topics)
 
     st.divider()
+
+    # Источники данных. Про синтетические тексты сказано здесь, а не
+    # плашкой на главном экране: предупреждение нужно, но кричать им
+    # на весь дашборд незачем.
+    if (texts["source"] == "demo").all():
+        st.caption(
+            "Источники: OpenStreetMap (ODbL), Police.uk (OGL v3.0). "
+            "Тексты - синтетические, сгенерированы "
+            "`src/bem/collect/demo_corpus.py` для отладки пайплайна. "
+            "Вкладка «Реальные данные» построена на настоящих данных."
+        )
+    else:
+        st.caption(
+            "Источники: OpenStreetMap (ODbL), Reddit, Police.uk (OGL v3.0)."
+        )
+
     st.caption(
-        "Данные: OpenStreetMap (ODbL) + тексты. "
         "Все модели отработали заранее - дашборд только показывает результат."
     )
 
@@ -177,7 +186,11 @@ with tab_map:
     )
     summary["name"] = [district_names().get(i, i) for i in summary.index]
 
-    m = build_map(summary, texts=view, places=places if len(places) else None)
+    # lang="ru": интерфейс дашборда русский, и карта внутри него должна
+    # быть на том же языке. По умолчанию build_map рисует по-английски,
+    # потому что те же карты сохраняются в файлы для английского README.
+    m = build_map(summary, texts=view, places=places if len(places) else None,
+                  lang=DASHBOARD_LANG)
     add_title(m, "Настроение по районам",
               f"{len(view)} текстов · слои переключаются справа сверху")
     st_html(m.get_root().render(), height=560)
@@ -334,8 +347,18 @@ with tab_police:
         # Если сделать .replace(",", " ") на всей строке, оно съест
         # и обычные запятые в тексте - поймал на себе.
         total = f"{len(police):,}".replace(",", "\u00a0")
+        # Согласование числительного: 1 происшествие, 2-4 происшествия,
+        # 5-20 происшествий, дальше по последней цифре (81 171 -> ...ие).
+        n = len(police)
+        last, last_two = n % 10, n % 100
+        if last == 1 and last_two != 11:
+            word = "происшествие"
+        elif last in (2, 3, 4) and last_two not in (12, 13, 14):
+            word = "происшествия"
+        else:
+            word = "происшествий"
         st.success(
-            f"**Это настоящие данные.** {total} происшествий за "
+            f"**Это настоящие данные.** {total} {word} за "
             f"{police['month'].nunique()} месяцев из Police.uk API "
             f"(Open Government Licence). В отличие от вкладок выше, здесь "
             f"нет ничего синтетического.",
