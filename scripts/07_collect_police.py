@@ -20,6 +20,7 @@ from bem.collect.police_uk import ATMOSPHERE_CATEGORIES, collect
 from bem.config import FIGURES_DIR, PROCESSED_DIR, ensure_dirs
 from bem.geo.districts import assign_districts_to_frame, district_names
 from bem.logging_setup import setup_logging
+from bem.viz.labels import get_labels, get_months
 
 logger = logging.getLogger("police")
 
@@ -29,6 +30,8 @@ def main() -> None:
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--months", type=int, default=None,
                         help="взять только N последних месяцев (для быстрой проверки)")
+    parser.add_argument("--lang", default="en", choices=["en", "ru"],
+                        help="язык подписей на графике")
     args = parser.parse_args()
 
     setup_logging()
@@ -75,13 +78,13 @@ def main() -> None:
         print(f"  {cat:<30} {count:>6}{mark}")
     print("\n  * - категории, которые мы считаем говорящими об атмосфере района")
 
-    plot_seasonality(df, FIGURES_DIR / "police_seasonality.png")
+    plot_seasonality(df, FIGURES_DIR / "police_seasonality.png", lang=args.lang)
     print(f"\nСохранено в {PROCESSED_DIR}")
     print(f"График: {FIGURES_DIR / 'police_seasonality.png'}")
 
 
 
-def plot_seasonality(df, path):
+def plot_seasonality(df, path, lang: str = "en"):
     """
     Сезонность реальных происшествий по районам.
 
@@ -97,8 +100,7 @@ def plot_seasonality(df, path):
 
     from bem.geo.districts import district_colors, district_names
 
-    months_ru = ["янв", "фев", "мар", "апр", "май", "июн",
-                 "июл", "авг", "сен", "окт", "ноя", "дек"]
+    L, months = get_labels(lang), get_months(lang)
     names, colors = district_names(), district_colors()
 
     atmo = df[(df["district"] != "other") & df["is_atmosphere"]].copy()
@@ -115,16 +117,20 @@ def plot_seasonality(df, path):
 
     ax.axvspan(7.6, 8.4, color="#ffd54f", alpha=0.30, zorder=0)
     ax.axvspan(4.6, 5.4, color="#90caf9", alpha=0.30, zorder=0)
-    ax.text(8, ax.get_ylim()[1], " Pride", va="top", fontsize=9, color="#856404")
-    ax.text(5, ax.get_ylim()[1], " Fringe", va="top", fontsize=9, color="#1565c0")
+    ax.text(8, ax.get_ylim()[1], L["pride"], va="top", fontsize=9, color="#856404")
+    ax.text(5, ax.get_ylim()[1], L["fringe"], va="top", fontsize=9, color="#1565c0")
 
     ax.axhline(1.0, color="#999", linewidth=0.9, linestyle="--")
     ax.set_xticks(range(1, 13))
-    ax.set_xticklabels(months_ru)
-    ax.set_ylabel("уровень относительно среднего по району\n(1.0 = обычный месяц)")
+    ax.set_xticklabels(months)
+    ax.set_ylabel(L["police_ylabel"])
+    # Числа берём из самих данных, а не хардкодим: если пересобрать
+    # проект через год, в подписи окажется актуальное количество.
     ax.set_title(
-        "РЕАЛЬНЫЕ данные: сезонность происшествий, влияющих на атмосферу района\n"
-        "источник: Police.uk, 36 месяцев, 81 171 инцидент",
+        L["police_title"].format(
+            months=df["month"].nunique(),
+            n=f"{len(df):,}".replace(",", "\u00a0"),
+        ),
         fontsize=12, pad=14,
     )
     ax.grid(alpha=0.25)

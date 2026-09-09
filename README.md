@@ -87,6 +87,16 @@ Tests:
 PYTHONPATH=src .venv/bin/pytest -v
 ```
 
+Chart labels are English by default. The repository is bilingual, so any
+script that draws something takes a `--lang` flag:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/05_timeseries.py --lang ru
+```
+
+Labels live in `src/bem/viz/labels.py`, not hardcoded in the plotting code -
+otherwise switching language would mean editing five files and forgetting one.
+
 ---
 
 ## Repository layout

@@ -87,6 +87,17 @@ PYTHONPATH=src .venv/bin/streamlit run app/streamlit_app.py
 PYTHONPATH=src .venv/bin/pytest -v
 ```
 
+Подписи на графиках по умолчанию английские: README на GitHub английский,
+и графики в нём должны читаться теми же людьми. Репозиторий двуязычный,
+поэтому у каждого рисующего скрипта есть флаг `--lang`:
+
+```bash
+PYTHONPATH=src .venv/bin/python scripts/05_timeseries.py --lang ru
+```
+
+Подписи вынесены в `src/bem/viz/labels.py`, а не зашиты в код рисования -
+иначе для смены языка пришлось бы править пять файлов и один точно забыть.
+
 ---
 
 ## Структура репозитория

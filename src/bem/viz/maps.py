@@ -35,6 +35,7 @@ from folium.plugins import HeatMap, MarkerCluster
 
 from bem.config import get_bbox
 from bem.geo.districts import district_names, load_districts
+from bem.viz.labels import get_labels, get_months
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +108,7 @@ def build_map(
     value_col: str = "net_sentiment",
     zoom: int = 14,
     scale_mode: str = "absolute",
+    lang: str = "en",
 ) -> folium.Map:
     """
     Собрать карту со всеми слоями.
@@ -133,6 +135,7 @@ def build_map(
     Режим "relative" уместен, когда рядом честно написано, что шкала
     относительная, и подписаны реальные значения.
     """
+    L = get_labels(lang)
     center = get_bbox().center()
     m = folium.Map(location=center, zoom_start=zoom, tiles=DEFAULT_TILES)
 
@@ -142,9 +145,8 @@ def build_map(
         # Растягиваем шкалу на фактический диапазон. Подпись обязана
         # сообщить, что сравнение относительное - иначе картинка врёт.
         colormap = sentiment_colormap(float(values.min()), float(values.max()))
-        colormap.caption = (
-            f"ОТНОСИТЕЛЬНАЯ шкала: {values.min():+.2f} … {values.max():+.2f}. "
-            f"Красный = худший из районов, а не «плохой»."
+        colormap.caption = L["scale_relative"].format(
+            lo=values.min(), hi=values.max()
         )
     else:
         # Симметричная шкала вокруг нуля: нейтральный цвет ровно на нуле,
@@ -165,16 +167,17 @@ def build_map(
         }
 
     tooltip_fields = ["name", value_col]
-    tooltip_aliases = ["Район", "Настроение"]
-    for extra, alias in [("n", "Текстов"), ("share_pos", "Доля позитива"),
-                         ("share_neg", "Доля негатива")]:
+    tooltip_aliases = [L["map_tooltip_district"], L["map_tooltip_value"]]
+    for extra, alias in [("n", L["map_tooltip_n"]),
+                         ("share_pos", L["map_tooltip_pos"]),
+                         ("share_neg", L["map_tooltip_neg"])]:
         if extra in district_stats.columns:
             tooltip_fields.append(extra)
             tooltip_aliases.append(alias)
 
     folium.GeoJson(
         geojson,
-        name="Настроение по районам",
+        name=L["map_districts_layer"],
         style_function=style_function,
         highlight_function=lambda f: {"weight": 4, "fillOpacity": 0.8},
         tooltip=folium.GeoJsonTooltip(
@@ -191,7 +194,7 @@ def build_map(
         if len(located):
             HeatMap(
                 located[["lat", "lon"]].values.tolist(),
-                name="Плотность упоминаний",
+                name=L["map_heat_layer"],
                 radius=14, blur=20, min_opacity=0.25, show=False,
             ).add_to(m)
             logger.info("Тепловая карта: %d точек", len(located))
@@ -201,14 +204,14 @@ def build_map(
         # MarkerCluster схлопывает близкие маркеры в кружок с числом.
         # Без него две тысячи точек превращаются в нечитаемое месиво
         # и браузер начинает тормозить.
-        cluster = MarkerCluster(name="Заведения", show=False)
+        cluster = MarkerCluster(name=L["map_places_layer"], show=False)
 
         for row in places.itertuples(index=False):
             popup = f"<b>{row.name}</b><br>{row.osm_type}"
             if hasattr(row, "net_sentiment") and pd.notna(row.net_sentiment):
-                popup += f"<br>настроение: {row.net_sentiment:+.2f}"
+                popup += f"<br>{L['map_popup_sentiment']}: {row.net_sentiment:+.2f}"
             if hasattr(row, "n_texts") and pd.notna(row.n_texts):
-                popup += f"<br>упоминаний: {int(row.n_texts)}"
+                popup += f"<br>{L['map_popup_mentions']}: {int(row.n_texts)}"
 
             folium.CircleMarker(
                 location=(row.lat, row.lon),
@@ -245,7 +248,7 @@ def add_title(m: folium.Map, title: str, subtitle: str = "") -> folium.Map:
 
 def plot_static_map(district_stats: pd.DataFrame, places: pd.DataFrame | None,
                     path, value_col: str = "net_sentiment",
-                    relative: bool = True) -> None:
+                    relative: bool = True, lang: str = "en") -> None:
     """
     Статичная карта в PNG - для README и презентаций.
 
@@ -259,25 +262,25 @@ def plot_static_map(district_stats: pd.DataFrame, places: pd.DataFrame | None,
     from matplotlib.colors import LinearSegmentedColormap, Normalize
     from matplotlib.patches import Polygon as MplPolygon
 
+    L = get_labels(lang)
     names = district_names()
     values = district_stats[value_col].dropna()
 
     cmap = LinearSegmentedColormap.from_list("sentiment", SENTIMENT_COLORS)
     if relative and len(values) and values.max() > values.min():
         norm = Normalize(vmin=values.min(), vmax=values.max())
-        scale_note = (f"относительная шкала {values.min():+.2f}…{values.max():+.2f} - "
-                      f"красный значит «худший из районов», а не «плохой»")
+        scale_note = L["scale_relative"].format(lo=values.min(), hi=values.max())
     else:
         limit = max(abs(values.min()), abs(values.max()), 0.1)
         norm = Normalize(vmin=-limit, vmax=limit)
-        scale_note = "абсолютная шкала, ноль = нейтрально"
+        scale_note = L["scale_absolute"]
 
     fig, ax = plt.subplots(figsize=(11, 7.5))
 
     # Фон: все заведения серыми точками - дают ощущение города
     if places is not None and len(places):
         ax.scatter(places["lon"], places["lat"], s=1.5, color="#b0bec5",
-                   alpha=0.55, zorder=1, label="заведения (OSM)")
+                   alpha=0.55, zorder=1, label=L["venues_osm"])
 
     for district in load_districts():
         value = district_stats.loc[district.key, value_col] \
@@ -306,12 +309,12 @@ def plot_static_map(district_stats: pd.DataFrame, places: pd.DataFrame | None,
     # (~50.8°) один градус долготы примерно в 1.6 раза короче градуса
     # широты. Без поправки город растянется по горизонтали.
     ax.set_aspect(1 / 0.63)
-    ax.set_xlabel("долгота")
-    ax.set_ylabel("широта")
-    ax.set_title(f"Emotional Map of Brighton\n{scale_note}", fontsize=13, pad=14)
+    ax.set_xlabel(L["longitude"])
+    ax.set_ylabel(L["latitude"])
+    ax.set_title(f"{L['map_title']}\n{scale_note}", fontsize=13, pad=14)
 
     fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax,
-                 label="Net sentiment (доля позитива − доля негатива)",
+                 label=L["net_sentiment"],
                  fraction=0.035, pad=0.02)
     ax.legend(loc="lower left", frameon=True, fontsize=9)
     ax.grid(alpha=0.15)

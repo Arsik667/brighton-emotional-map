@@ -25,6 +25,7 @@ from bem.geo.districts import district_names
 from bem.logging_setup import setup_logging
 from bem.analysis.ranking import rank_places
 from bem.nlp.sentiment import to_district_scores
+from bem.viz.labels import get_labels
 from bem.viz.maps import add_title, build_map, plot_static_map
 
 warnings.filterwarnings("ignore")
@@ -37,6 +38,8 @@ PLACES = INTERIM_DIR / "places.csv"
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="distilbert", choices=["distilbert", "vader"])
+    parser.add_argument("--lang", default="en", choices=["en", "ru"],
+                        help="язык подписей на карте (README на GitHub английский)")
     parser.add_argument("--min-texts", type=int, default=3,
                         help="минимум упоминаний, чтобы заведение попало в рейтинг")
     parser.add_argument("--topic-col", default="keyword_topic",
@@ -95,19 +98,15 @@ def main() -> None:
     place_summary.to_csv(PROCESSED_DIR / "place_summary.csv", index=False)
 
     # ---------- карта ----------
+    L = get_labels(args.lang)
     source_note = (
-        "ДЕМО-ДАННЫЕ (синтетические)" if (texts["source"] == "demo").all()
-        else "данные Reddit + OpenStreetMap"
+        L["source_demo"] if (texts["source"] == "demo").all() else L["source_real"]
     )
 
     # Две карты с разными цветовыми шкалами - см. пояснение в build_map.
     for mode, filename, note in [
-        ("absolute", "emotional_map.html",
-         "Абсолютная шкала: ноль = нейтрально. Все районы в плюсе, "
-         "поэтому все зелёные - различия между ними невелики."),
-        ("relative", "emotional_map_relative.html",
-         "ОТНОСИТЕЛЬНАЯ шкала: растянута на диапазон данных. "
-         "Красный означает «худший из пяти», а НЕ «плохой»."),
+        ("absolute", "emotional_map.html", L["map_note_absolute"]),
+        ("relative", "emotional_map_relative.html", L["map_note_relative"]),
     ]:
         m = build_map(
             district_stats=district_summary,
@@ -115,15 +114,17 @@ def main() -> None:
             places=place_summary,
             value_col="net_sentiment",
             scale_mode=mode,
+            lang=args.lang,
         )
         add_title(
-            m, "Emotional Map of Brighton",
-            f"{len(texts)} текстов · {source_note}<br>{note}",
+            m, L["map_title"],
+            L["map_subtitle"].format(n=len(texts), source=source_note) + f"<br>{note}",
         )
         m.save(FIGURES_DIR / filename)
 
     # Статичная версия для README - на GitHub интерактивная карта не покажется
-    plot_static_map(district_summary, places, FIGURES_DIR / "emotional_map.png")
+    plot_static_map(district_summary, places, FIGURES_DIR / "emotional_map.png",
+                    lang=args.lang)
 
     out = FIGURES_DIR / "emotional_map.html"
 

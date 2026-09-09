@@ -116,7 +116,9 @@ def assign_districts_to_frame(df, lat_col: str = "lat", lon_col: str = "lon",
 def district_names() -> dict[str, str]:
     """Словарь {ключ: человеческое имя} - для подписей на графиках."""
     names = {d.key: d.name for d in load_districts()}
-    names[UNKNOWN] = "Other / за пределами районов"
+    # Подпись английская: она попадает в графики и карты, а README
+    # на GitHub английский. Комментарии и консольный вывод остаются русскими.
+    names[UNKNOWN] = "Other (outside districts)"
     return names
 
 
