@@ -1,0 +1,23 @@
+# Базовый набор - ставится на любой Python 3.10+, включая 3.14.
+# Тяжёлые нейросетевые библиотеки вынесены в requirements-nlp.txt,
+# чтобы поломка одной из них не блокировала весь проект.
+
+pyyaml>=6.0
+requests>=2.31
+python-dotenv>=1.0
+tqdm>=4.66
+
+pandas>=2.0
+numpy>=1.26
+scikit-learn>=1.4
+
+shapely>=2.0          # геометрия: точка-в-полигоне
+folium>=0.16          # интерактивная карта
+plotly>=5.20          # графики и вторая карта
+matplotlib>=3.8       # статичные картинки для README
+
+vaderSentiment>=3.3.2 # sentiment-baseline, без нейросетей
+praw>=7.7             # Reddit API
+
+streamlit>=1.33       # дашборд
+pytest>=8.0

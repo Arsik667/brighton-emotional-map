@@ -1,0 +1,23 @@
+# --- данные ---
+# Сырые данные НЕ коммитим: они большие, могут содержать персональные данные
+# и подпадать под ToS источников. В репо едут только агрегаты (data/processed).
+data/raw/*
+data/interim/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+
+# --- секреты ---
+.env
+*.key
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# --- macOS ---
+.DS_Store

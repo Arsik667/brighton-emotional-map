@@ -1,0 +1,10 @@
+# Тяжёлая часть: трансформеры. Ставить ОТДЕЛЬНО и только когда дойдём до Этапа 4:
+#   pip install -r requirements-nlp.txt
+#
+# Внимание: под Python 3.14 колёса torch могут быть ещё не собраны.
+# Если не встанет - не страшно, у нас есть рабочий план Б (VADER + LDA).
+
+torch>=2.2
+transformers>=4.40
+bertopic>=0.16
+sentence-transformers>=2.7

@@ -1,0 +1,97 @@
+# Ключевые слова для привязки ТЕКСТА к району.
+#
+# Заведение мы привязываем к району по координатам - это точно.
+# С текстом сложнее: у поста на Reddit координат нет. Поэтому два способа:
+#
+#   1) в тексте упомянуто название заведения из нашей базы -> берём его район
+#   2) в тексте упомянут топоним или улица района -> берём этот район
+#
+# Первый способ точнее, второй покрывает больше текстов. Используем оба,
+# приоритет у первого.
+#
+# ВАЖНО про подбор слов: они должны быть однозначными. "Lanes" годится,
+# а "bar" или "beach" - нет: они встречаются в разговоре о любом районе.
+# Слишком общее слово не добавляет данных, а добавляет шума.
+
+districts:
+
+  seafront:
+    keywords:
+      - seafront
+      - sea front
+      - the beach
+      - brighton beach
+      - palace pier
+      - brighton pier
+      - west pier
+      - i360
+      - beachfront
+      - kings road
+      - king's road
+      - madeira drive
+      - brighton marina
+      - the arches
+      - volks railway
+
+  the_lanes:
+    keywords:
+      - the lanes
+      - brighton lanes
+      - ship street
+      - east street
+      - meeting house lane
+      - brighton square
+      - royal pavilion
+      - the pavilion
+      - old steine
+      - dukes lane
+
+  north_laine:
+    keywords:
+      - north laine
+      - kensington gardens
+      - gardner street
+      - trafalgar street
+      - sydney street
+      - bond street
+      - gloucester road
+      - the level
+      - brighton station
+
+  kemptown:
+    keywords:
+      - kemptown
+      - kemp town
+      - st james street
+      - st james's street
+      - sussex square
+      - royal sussex
+      - brighton college
+      - queens park
+      - queen's park
+
+  hove:
+    keywords:
+      - hove
+      - church road
+      - blatchington
+      - goldstone
+      - palmeira
+      - brunswick
+      - hove lawns
+      - hove lagoon
+      - portslade
+
+# Темы, которые нас интересуют в текстах. Пригодятся на Этапе 5,
+# чтобы дать человеческие имена автоматически найденным темам.
+topics:
+  food: [food, meal, dish, menu, breakfast, brunch, dinner, lunch, tasty, delicious, portion]
+  price: [price, expensive, cheap, overpriced, value, cost, pricey, affordable, rip off]
+  noise: [noise, noisy, loud, quiet, music, shouting, rowdy]
+  atmosphere: [atmosphere, vibe, cosy, cozy, charming, buzzing, friendly, welcoming]
+  service: [service, staff, waiter, rude, polite, attentive, slow service]
+  crowds: [crowded, busy, packed, queue, tourists, rammed, heaving]
+  cleanliness: [dirty, clean, litter, rubbish, filthy, tidy, smell]
+  safety: [safe, unsafe, dodgy, sketchy, drunk, antisocial, police]
+  nightlife: [club, clubbing, pub, drinks, pint, cocktail, night out]
+  parking: [parking, park the car, traffic, permit, car park]

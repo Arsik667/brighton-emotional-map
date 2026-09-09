@@ -1,0 +1,100 @@
+# Какие объекты (POI - points of interest) тянем из OpenStreetMap.
+#
+# В OSM всё описано тегами вида amenity=cafe, shop=bakery, tourism=museum.
+# Здесь мы, во-первых, перечисляем нужные значения тегов, во-вторых -
+# схлопываем их в укрупнённые категории, по которым потом будем фильтровать
+# на дашборде. Пользователю дашборда не нужны 40 значений тега amenity,
+# ему нужно 7 понятных групп.
+
+# Ключ = тег OSM, значение = список интересных нам значений этого тега.
+osm_tags:
+  amenity:
+    - restaurant
+    - cafe
+    - bar
+    - pub
+    - fast_food
+    - nightclub
+    - biergarten
+    - ice_cream
+    - food_court
+    - theatre
+    - cinema
+    - arts_centre
+    - marketplace
+  tourism:
+    - hotel
+    - hostel
+    - guest_house
+    - bed_and_breakfast
+    - museum
+    - gallery
+    - attraction
+    - artwork
+    - viewpoint
+  shop:
+    - bakery
+    - books
+    - clothes
+    - deli
+    - greengrocer
+    - butcher
+    - gift
+    - music
+    - second_hand
+    - charity
+    - department_store
+    - supermarket
+    - coffee
+    - convenience
+  leisure:
+    - park
+    - garden
+    - fitness_centre
+    - beach_resort
+    - sports_centre
+
+# Укрупнение: значение тега -> категория для дашборда.
+# Всё, чего здесь нет, попадёт в "other".
+category_map:
+  restaurant: food
+  fast_food: food
+  food_court: food
+  cafe: cafe
+  ice_cream: cafe
+  coffee: cafe
+  bakery: cafe
+  deli: food
+  bar: nightlife
+  pub: nightlife
+  nightclub: nightlife
+  biergarten: nightlife
+  theatre: culture
+  cinema: culture
+  arts_centre: culture
+  museum: culture
+  gallery: culture
+  artwork: culture
+  attraction: culture
+  viewpoint: outdoor
+  hotel: accommodation
+  hostel: accommodation
+  guest_house: accommodation
+  bed_and_breakfast: accommodation
+  books: shopping
+  clothes: shopping
+  greengrocer: shopping
+  butcher: shopping
+  gift: shopping
+  music: shopping
+  second_hand: shopping
+  charity: shopping
+  department_store: shopping
+  supermarket: shopping
+  convenience: shopping
+  marketplace: shopping
+  park: outdoor
+  garden: outdoor
+  beach_resort: outdoor
+  fitness_centre: outdoor
+  sports_centre: outdoor
